@@ -116,10 +116,3 @@ if __name__ == "__main__":
 	# logging.basicConfig(level=logging.INFO)
 	main()
 	
-	
-'''Tareas:
-
-*Comprobar que el formato sea ogg VORBIS
-*Encriptar un archivo https://www.geeksforgeeks.org/encrypt-and-decrypt-files-using-python/
-*Subir archivos a dropbox https://www.analyticslane.com/2019/03/11/subir-archivos-a-dropbox-desde-python-a-traves-de-la-api/
-'''
