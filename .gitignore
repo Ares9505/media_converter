@@ -1,4 +1,9 @@
+*.mp3
+*.flac
+*.ogg
 mykey.key
 *.odt
 audio/
 converted/
+out.txt
+git_token.txt
