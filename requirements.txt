@@ -1,4 +1,13 @@
+certifi==2021.10.8
 cffi==1.14.6
+charset-normalizer==2.0.6
 cryptography==35.0.0
+dropbox==11.21.0
+idna==3.2
+ply==3.11
 pycparser==2.20
 pydub==0.25.1
+requests==2.26.0
+six==1.16.0
+stone==3.2.1
+urllib3==1.26.7
