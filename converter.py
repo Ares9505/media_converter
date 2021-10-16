@@ -5,37 +5,55 @@ import os
 import logging
 from cryptography.fernet import Fernet
 import base64
-
+from tinytag import TinyTag
+from xattr import setxattr, getxattr
 import magic
 
 def convert_media(base_dir: Path, pagination: int):
 	'''
 		Convert .mp3 and .flac audios from folder '/audios'
-		in oog 96kbs 
+		in oog 96kbs adding the artis an title metadata 
 	'''
 	counter = 0
 
 	for paths,_,files in os.walk(base_dir + "/audio/"):
 		for file in files:
 			storage_dir = base_dir + "/converted/" + str(Path(file).stem) + ".ogg"
+			source_dir = os.path.join(paths,file)
+			
+			#Extracting metadata from original file
+			audio_meta = TinyTag.get(source_dir)
+			tags = {
+				"artist": audio_meta.artist,
+				"title" : audio_meta.title 
+				}
+			
+			#Convertion by extentions type
 			if Path(file).suffix == ".mp3":	
-				audio = AudioSegment.from_mp3( os.path.join(paths,file))			
-				audio_converted = audio.export(storage_dir, format = "ogg", bitrate="96000")
+				audio = AudioSegment.from_mp3( source_dir)			
+				audio_converted = audio.export(
+					storage_dir, 
+					format = "ogg",
+					 bitrate="96000",
+					 tags = tags #adding audio_metadata
+					 )
 
 			elif Path(file).suffix == ".flac":
-				audio = AudioSegment.from_file(os.path.join(paths,file), "flac")				
-				audio_converted = audio.export(storage_dir, format = "ogg", bitrate="96000")
-				# print(mediainfo(base_dir + "/converted/" + str(Path(file).stem) + ".ogg")['bit_rate'])
-
+				audio = AudioSegment.from_file(source_dir, "flac")				
+				audio_converted = audio.export(
+					storage_dir,
+					format = "ogg",
+					bitrate="96000",
+					tags = tags 
+					)
 			else:
 				logging.warning("The file located at" + paths + "was not converted")
+			
+			logging.info("{0} processed".format(source_dir))
 			
 			counter+=1
 			if counter == pagination:
 				break
-
-		logging.info("100 songs processed")
-
 
 
 
@@ -46,7 +64,6 @@ def generate_key():
 	key = Fernet.generate_key()
 	with open("mykey.key","wb") as key_file:
 		key_file.write(key) 
-
 
 
 
@@ -84,19 +101,41 @@ def decrypt_file(file : Path, key : str):
 
 
 
+
 def file_partial_encode_base64(file_path): #se codificaran los 100 primeros bits
 	'''
-		Overwrite first 150 bits information with base64 equivalent, the rest of the 
-		strem remain iqual
+		*Save song metadata from file
+		*Overwrite first 150 bits information with base64 equivalent, the rest of the 
+		bytestream remain iqual
+		*Write the song metadata from original file to encoded file
+
 	'''
+
+	original_audio_tags = TinyTag.get(file_path)	
+	
 	with open(file_path, "rb") as file:
 		data = file.read()
 	partial_data_encoded = base64.encodebytes(data[:150])
-	print(len(partial_data_encoded))
-	#concatenando dos byte string
+	
+	#concat byte strings
 	data_encoded = b''.join([partial_data_encoded,data[150:]])	
-	with open("encoded/" + file_path.name + ".ready", "wb") as file_to:
+	
+	encoded_files_paths = "encoded/" + file_path.stem + ".txt"
+	with open(encoded_files_paths, "wb") as file_to:
 		file_to.write(data_encoded)
+
+	#Adding original metadata
+	setxattr(
+		encoded_files_paths,
+		"user.artist",
+		bytes(original_audio_tags.artist,'utf-8'), # the atribute most by a byte-like object
+		)
+	
+	setxattr(
+		encoded_files_paths,
+		"user.title",
+		bytes(original_audio_tags.title,'utf-8'), # the atribute most by a byte-like object
+		)
 
 
 
@@ -108,7 +147,7 @@ def file_partial_decode_base64(file_path):
 	#concatenando dos byte string
 	data_encoded = b''.join([partial_data_decoded,data[203:]])
 	
-	with open("decoded/" + file_path.stem, "wb") as file_to:
+	with open("decoded/" + file_path.stem + ".ogg", "wb") as file_to:
 		file_to.write(data_encoded)	
 
 
@@ -142,23 +181,24 @@ def main():
 
 
 if __name__ == "__main__":
-	# logging.basicConfig(level=logging.INFO)
+	logging.basicConfig(level=logging.INFO)
 	# main()
 
 	base_dir = os.getcwd()
+
+	# convert_media(base_dir,100)
 	paths_files = [p for p in Path(base_dir + '/converted').glob("*.ogg")]
 	for path in paths_files:
 		file_partial_encode_base64(path)
 
 	
-	# print(magic.from_file("encoded"))
+	# print(magic.from_file("encoded")) #para saber el tipo de archivo
 	
 
 
-#Probar codificar en vez de encriptar
+#Tareas
+#Probar codificar en vez de encriptar X
 #Annadir manejo de errores a conversion de media
+#Definir en el loging que converter es quien lo ejecuta
 
-#notas:
-#para decodificar seran 138bytes
-#hacer funcion de decodificacion
 
