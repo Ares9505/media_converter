@@ -50,8 +50,10 @@ def upload_files_to_dropbox(
 			logging.warning(f'{file} could\'nt been upload')
 			upload_errors += 1
 		
+		os.remove(file)
 		index += 1
 	logging.info(f'{upload_errors} errors uploadings files')
+
 
 
 
@@ -63,6 +65,7 @@ def main():
 	base_dir = os.getcwd() + '/converted'
 
 	# Creating test files with metadata
+	#---------------------------------------
 	# nombres = ['Alicia', 'Pedro', 'Juan', 'Olivia']
 	# for nombre in nombres:
 	# 	file_path = f'converted/{nombre}.txt'
@@ -93,9 +96,5 @@ if __name__ == "__main__":
 	main()
 
 		
-
 	# Direccion de la api:
 	# https://www.dropbox.com/developers/apps/info/qogj8z5rrgn1hgn#permissions
-
-#Tareas:
-#Comprobar que se guarde la metadata, se borre antes de subir y se haga el log correctamente x

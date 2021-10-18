@@ -7,7 +7,7 @@ from cryptography.fernet import Fernet
 import base64
 from tinytag import TinyTag
 from xattr import setxattr, getxattr
-import magic
+# import magic # for extract file type by magic number
 
 def convert_media(base_dir: Path, pagination: int):
 	'''
@@ -138,6 +138,7 @@ def file_partial_encode_base64(file_path): #se codificaran los 100 primeros bits
 		"user.title",
 		bytes(original_audio_tags.title,'utf-8'), # the atribute most by a byte-like object
 		)
+	os.remove(file_path)
 
 
 
@@ -146,7 +147,7 @@ def file_partial_decode_base64(file_path):
 		data = file.read()
 
 	partial_data_decoded = base64.decodebytes(data[:203])	
-	#concatenando dos byte string
+	#concat byte string
 	data_encoded = b''.join([partial_data_decoded,data[203:]])
 	
 	with open("decoded/" + file_path.stem + ".ogg", "wb") as file_to:
