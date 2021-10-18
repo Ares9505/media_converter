@@ -7,18 +7,22 @@ from cryptography.fernet import Fernet
 import base64
 from tinytag import TinyTag
 from xattr import setxattr, getxattr
+import shutil
 # import magic # for extract file type by magic number
 
 def convert_media(base_dir: Path, pagination: int):
 	'''
-		Convert .mp3 and .flac audios from folder '/audios'
-		in oog 96kbs adding the artis an title metadata 
+		-Convert .mp3 and .flac audios from folder '/audios'
+		in oog 96kbs coping from original the artis an title metadata 
+		-Storage ogg in tem_converted folder
+		-Remove original .mp3 or .flac audio
+		-Move converted media to converted folder
 	'''
 	counter = 0
 
 	for paths,_,files in os.walk(base_dir + "/audio/"):
 		for file in files:
-			storage_dir = base_dir + "/converted/" + str(Path(file).stem) + ".ogg"
+			storage_dir = base_dir + "/temp_converted/" + str(Path(file).stem) + ".ogg"
 			source_dir = os.path.join(paths,file)
 			
 			#Extracting metadata from original file
@@ -51,7 +55,9 @@ def convert_media(base_dir: Path, pagination: int):
 				logging.warning("The file located at" + paths + "was not converted")
 			
 			logging.info("{0} processed".format(source_dir))
+			
 			os.remove(source_dir)
+			shutil.move(storage_dir, base_dir + "/converted/")
 			
 			counter+=1
 			if counter == pagination:
