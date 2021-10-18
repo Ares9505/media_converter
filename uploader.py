@@ -98,4 +98,4 @@ if __name__ == "__main__":
 	# https://www.dropbox.com/developers/apps/info/qogj8z5rrgn1hgn#permissions
 
 #Tareas:
-#Comprobar que se guarde la metadata, se borre antes de subir y se haga el log correctamente
+#Comprobar que se guarde la metadata, se borre antes de subir y se haga el log correctamente x
