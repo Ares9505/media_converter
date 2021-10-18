@@ -38,6 +38,7 @@ def convert_media(base_dir: Path, pagination: int):
 					 tags = tags #adding audio_metadata
 					 )
 
+
 			elif Path(file).suffix == ".flac":
 				audio = AudioSegment.from_file(source_dir, "flac")				
 				audio_converted = audio.export(
@@ -50,6 +51,7 @@ def convert_media(base_dir: Path, pagination: int):
 				logging.warning("The file located at" + paths + "was not converted")
 			
 			logging.info("{0} processed".format(source_dir))
+			os.remove(source_dir)
 			
 			counter+=1
 			if counter == pagination:
