@@ -8,6 +8,7 @@ import base64
 from tinytag import TinyTag
 from xattr import setxattr, getxattr
 import shutil
+import time
 # import magic # for extract file type by magic number
 
 def convert_media(base_dir: Path, pagination: int):
@@ -19,10 +20,11 @@ def convert_media(base_dir: Path, pagination: int):
 		-Move converted media to converted folder
 	'''
 	counter = 0
+	errors_counter = 0
 
 	for paths,_,files in os.walk(base_dir + "/audio/"):
 		for file in files:
-			storage_dir = base_dir + "/temp_converted/" + str(Path(file).stem) + ".ogg"
+			storage_dir = base_dir + "/temp/" + str(Path(file).stem) + ".ogg"
 			source_dir = os.path.join(paths,file)
 			
 			#Extracting metadata from original file
@@ -53,16 +55,19 @@ def convert_media(base_dir: Path, pagination: int):
 					)
 			else:
 				logging.warning("The file located at" + paths + "was not converted")
+				errors_counter +=1
 			
-			logging.info("{0} processed".format(source_dir))
+			logging.info("{0} processed to convert".format(source_dir))
 			
 			os.remove(source_dir)
+			
 			shutil.move(storage_dir, base_dir + "/converted/")
 			
 			counter+=1
 			if counter == pagination:
 				break
-
+		if counter != 0:
+			logging.info("{0} processed file(s), {1} error(s)". format(counter, errors_counter))
 
 
 def generate_key():
@@ -110,7 +115,7 @@ def decrypt_file(file : Path, key : str):
 
 
 
-def file_partial_encode_base64(file_path): #se codificaran los 100 primeros bits
+def file_partial_encode_base64(file_path, base_dir): #se codificaran los 100 primeros bits
 	'''
 		*Save song metadata from file
 		*Overwrite first 150 bits information with base64 equivalent, the rest of the 
@@ -118,7 +123,6 @@ def file_partial_encode_base64(file_path): #se codificaran los 100 primeros bits
 		*Write the song metadata from original file to encoded file
 
 	'''
-
 	original_audio_tags = TinyTag.get(file_path)	
 	
 	with open(file_path, "rb") as file:
@@ -128,7 +132,7 @@ def file_partial_encode_base64(file_path): #se codificaran los 100 primeros bits
 	#concat byte strings
 	data_encoded = b''.join([partial_data_encoded,data[150:]])	
 	
-	encoded_files_paths = "encoded/" + file_path.stem + ".txt"
+	encoded_files_paths = base_dir + "/temp/" + file_path.stem + ".txt"
 	with open(encoded_files_paths, "wb") as file_to:
 		file_to.write(data_encoded)
 
@@ -144,6 +148,9 @@ def file_partial_encode_base64(file_path): #se codificaran los 100 primeros bits
 		"user.title",
 		bytes(original_audio_tags.title,'utf-8'), # the atribute most by a byte-like object
 		)
+
+	shutil.move(encoded_files_paths, base_dir + "/encoded" )
+	logging.info(f'{file_path} was encoded')
 	os.remove(file_path)
 
 
@@ -208,6 +215,8 @@ if __name__ == "__main__":
 #Tareas
 #Probar codificar en vez de encriptar X
 #Annadir manejo de errores a conversion de media
+	#que cuando el arrchivo exista se borre e storage dir
 #Definir en el loging que converter es quien lo ejecuta
+#Agregar 
 
 

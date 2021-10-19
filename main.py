@@ -7,26 +7,59 @@ import json
 import dropbox
 import logging 
 import multiprocessing
+import shutil
+from xattr import setxattr 
 
-def convert(base_dir):
+def start_process(target, args):
+	process = multiprocessing.Process(target = target, args = args)
+	process.start()
+
+def convert(base_dir, pagination):
 	while True:
-		convert_media(base_dir,pagination = 2)
-	
+		convert_media(base_dir,pagination)
+
+def encode(base_dir, encoding_pagination):
+	while True:
+		for _,to_encode_path in zip(range(encoding_pagination),Path(base_dir + "/converted").glob("*.ogg")):
+			file_partial_encode_base64(to_encode_path,base_dir)	
+
+def upload(
+	base_dir: str,
+	upload_pagination: int,
+	dpx: dropbox.Dropbox
+	):
+	txt_log_counter = 0 # clone cause is'not the same variable
+	while True:
+		file_paths = [j for _,j in zip(range(upload_pagination),Path(base_dir + "/encoded").glob("*.*"))]
+		upload_files_to_dropbox(dbx, file_paths, upload_pagination, txt_log_counter)
+		txt_log_counter += 1
+
 
 if __name__ == "__main__":
 	logging.basicConfig(level=logging.INFO)
 	base_dir = os.getcwd()
-	txt_log_counter = 0 #
-	processes = []
-
-	convert_process = multiprocessing.Process(target = convert, args = [base_dir])
-	convert_process.start()
-	processes.append(convert_process)
+	converter_pagination = 100
+	encoding_pagination = 100
+	upload_pagination = 100
 
 
-	# encoding_pagination = 100
-	# for _,to_encode_path in zip(range(encoding_pagination),Path(base_dir + "/converted").glob("*.ogg")):
-	# 	file_partial_encode_base64(to_encode_path)
+	# #Preparing scenary
+	# #--------------------------------------
+	# for i in Path(base_dir +"/converted").glob("*.*"):
+	# 	os.remove(i)
+
+	# for i in Path(base_dir + "/encoded").glob("*.*"):
+	# 	os.remove(i)
+	
+	# for i in Path(base_dir + "/logs").glob("*.*"):
+	# 	os.remove(i)
+
+	# for i in Path(base_dir + "/temporal").glob("*.*"):
+	# 	shutil.copy(i, base_dir + "/audio")
+	# # --------------------------------------
+
+	start_process(convert,[ base_dir, converter_pagination])
+	start_process(encode, [base_dir, encoding_pagination])
 
 	# # #Fragment of code tu decode files from encoded folder
 	# # # ---------------------------------------------------
@@ -34,24 +67,34 @@ if __name__ == "__main__":
 	# # # 	file_partial_decode_base64(to_encode_path)
 	# # #----------------------------------------------------
 
-	# with open("config.json", "r") as json_file:
-	# 	config = json.load(json_file)
+	#Test to upload files
+	#--------------------------------------
+	# nombres = ['Alicia', 'Pedro', 'Juan', 'Olivia','Pepe', 'Antonio', 'Lino', 'Juano', 'mariguano']
+	# for nombre in nombres:
+	# 	file_path = f'encoded/{nombre}.txt'
+	# 	file=open(file_path,'wb')
+	# 	file.write(b'SomeDataBinary')
+	# 	file.close()
+	# 	setxattr(
+	# 		file_path,
+	# 		 "user.artist",
+	# 		  bytes(nombre,"utf-8"))
+	# 	setxattr(
+	# 		file_path,
+	# 		 "user.title",
+	# 		  bytes(nombre,"utf-8"))
+	#----------------------------------------
 
-	# # Conecting with dropbox api
-	# dbx = dropbox.Dropbox(config['dropbox_token'])
+	with open("config.json", "r") as json_file:
+		config = json.load(json_file)
+
+	# Conecting with dropbox api
+	dbx = dropbox.Dropbox(config['dropbox_token'])
 	
-	# #Upload to dropbox
-	# upload_pagination = 3
-	# file_paths = [j for _,j in zip(range(upload_pagination),Path(base_dir + "/encoded").glob("*.*"))]
-	# upload_files_to_dropbox(dbx, file_paths, upload_pagination, txt_log_counter)
-	# txt_log_counter += 1
+	# Upload to dropbox
+	start_process(upload,[base_dir, upload_pagination, dbx])
 
-	for p in processes:
-		p.join()
-
-	# Tareas:
-	#Annadir traspaso de metadata de audio mp3 a ogg(converter) y de ogg a ready(uploader) para leerlo X
-	#Aplicar multiprocessing para que se vayan haciendo los procesos en paralelo
+	
 
 
 
